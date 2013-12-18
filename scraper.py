@@ -89,7 +89,7 @@ def _parse_pages (doc):
         text_content.append(parse_lt_objs(layout._objs, (i+1)))
     return text_content
 
-def get_pages_as_string(pdf_doc, pdf_pwd='', images_folder='/tmp'):
+def get_pdf_as_string(pdf_doc, pdf_pwd='', images_folder='/tmp'):
     """Process each of the pages in this pdf file and print the entire text to stdout"""
     array = with_pdf(pdf_doc, pdf_pwd, _parse_pages)
     return '\n\n'.join(array)
