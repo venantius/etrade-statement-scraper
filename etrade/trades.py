@@ -35,7 +35,8 @@ class Trade(Record):
                 amount) = single_line_record.rsplit(' ', 5)
         trade.quantity = float(trade.quantity)
         trade.price = float(trade.price)
-        trade.commission = float(amount) - trade.quantity * trade.price
+        trade.commission = float(amount.replace(',', '')) - \
+                trade.quantity * trade.price
         return trade
 
     def __repr__(self):

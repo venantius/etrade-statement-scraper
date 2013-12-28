@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 """
-Mostly stuff I stole from the PDFminer site, modified a little to work with E*Trade stuff (at least, as well as it can be expected to.
+Mostly stuff I stole from the PDFminer site, modified a little to work with E*Trade stuff (at least, as well as it can be expected to).
 """
 
 import sys
@@ -40,8 +40,9 @@ def with_pdf (pdf_doc, pdf_pwd, fn, *args):
 
         # close the pdf file
         fp.close()
-    except IOError:
+    except IOError, e:
         # the file doesn't exist or similar problem
+        print e
         pass
     return result
 
