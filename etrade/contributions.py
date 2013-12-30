@@ -35,6 +35,12 @@ class Contribution(Record):
             self.amount]])
 
     @classmethod
+    def from_string(cls, csv_record):
+        record = cls()
+        record.date, record.transaction_type, record.amount = csv_record.split(',')
+        return record
+
+    @classmethod
     def is_single_line(cls, transaction_record):
         """
         Does this dividend record exist entirely on one line?

@@ -26,7 +26,7 @@ class Withdrawal(Record):
         record.date = cls.string_to_datetime(single_line_record[0:8])
         _, record.amount = single_line_record.rsplit(' ', 1)
         record.transaction_type = 'Withdrawal'
-        record.amount = float(record.amount)
+        record.amount = float(record.amount.replace(',',''))
         return record
 
     def __repr__(self):
@@ -43,13 +43,20 @@ class Withdrawal(Record):
             return True
         else:
             return False
+    @staticmethod
+    def clean(record):
+        x = record.find('WITHDRAWL')
+        end = record[x+9:]
+        end = end.split(' ')
+        if end[0][0:5] == "REFID":
+            return record
+        else:
+            return record[:x+9] + end[1] + ' ' + end[0]
 
 def get_records(text_block):
     """
     Get all the trades from a block of text listing trade records
     """
-    #TODO: Refactor all of these into a classmethod for Record, then
-    # set arguments for start, end, find, and non-single-line behavior
     start = text_block.find('(cid:87)(cid:73)(cid:84)(cid:72)(cid:68)'\
             '(cid:82)(cid:65)(cid:87)(cid:65)(cid:76)(cid:83)(cid:32)'\
             '(cid:38)(cid:32)(cid:68)(cid:69)(cid:80)(cid:79)(cid:83)'\
@@ -58,6 +65,10 @@ def get_records(text_block):
     text_block = text_block[start:end]
     withdrawals = []
     text_block = text_block.split('\n')
+    """
+    for line in text_block:
+        print line
+        """
     for i, record in enumerate(text_block):
         if record.find('Transfer ACH WITHDRAWL') != -1:
             if Withdrawal.is_single_line(record):
@@ -65,6 +76,8 @@ def get_records(text_block):
             elif len(record.split(' ')) < 1:
                 continue
             else:
-                withdrawals.append(Withdrawal.from_record(''.join(
-                    [text_block[i], text_block[i+1], ' ', text_block[i-1]])))
+                record = ''.join(
+                    [text_block[i], text_block[i+1], ' ', text_block[i-1]])
+                record = Withdrawal.clean(record)
+                withdrawals.append(Withdrawal.from_record(record))
     return withdrawals

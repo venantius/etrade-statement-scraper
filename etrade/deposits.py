@@ -23,10 +23,9 @@ class Deposit(Record):
         Parse a dividend record from a given PDF record
         """
         record = cls()
-        print single_line_record
         record.date = cls.string_to_datetime(single_line_record[0:8])
         _, record.amount = single_line_record.rsplit(' ', 1)
-        record.amount = float(record.amount)
+        record.amount = float(record.amount.replace(',',''))
         record.transaction_type = 'Deposit'
         return record
 
@@ -34,6 +33,16 @@ class Deposit(Record):
         return ','.join([str(x) for x in [self.date, self.transaction_type,
             self.amount]])
 
+    @staticmethod
+    def clean(record):
+        x = record.find('DEPOSIT')
+        end = record[x+7:]
+        end = end.split(' ')
+        if end[0][0:5] == "REFID":
+            return record
+        else:
+            return record[:x+7] + end[1] + ' ' + end[0]
+        
     @classmethod
     def is_single_line(cls, transaction_record):
         """
@@ -59,6 +68,10 @@ def get_records(text_block):
     text_block = text_block[start:end]
     deposits = []
     text_block = text_block.split('\n')
+    """
+    for line in text_block:
+        print line
+    """
     for i, record in enumerate(text_block):
         if record.find('Deposit ACH') != -1:
             if Deposit.is_single_line(record):
@@ -66,6 +79,9 @@ def get_records(text_block):
             elif len(record.split(' ')) < 1:
                 continue
             else:
-                deposits.append(Deposit.from_record(''.join(
-                    [text_block[i], text_block[i+1], ' ', text_block[i-1]])))
+                record = ''.join([text_block[i], text_block[i+1], 
+                    ' ', text_block[i-1]])
+                record = Deposit.clean(record)
+                record = Deposit.from_record(record)
+                deposits.append(record)
     return deposits

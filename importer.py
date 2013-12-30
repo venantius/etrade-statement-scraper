@@ -7,11 +7,13 @@ The core executable for scraping E*Trade statements
 USAGE:
     statement-scraper statements PDF...
     statement-scraper directories DIR...
+    statement-scraper csv FILE...
 """
 
 import docopt
 import os
 import scraper
+import sys
 
 from etrade import contributions
 from etrade import deposits
@@ -44,12 +46,16 @@ def parse_directory(dir_path):
     """
     portfolio = Portfolio()
     for pdf in os.listdir(dir_path):
+        print >> sys.stderr, "Parsing %s" % pdf
+        if pdf[-4:] != '.pdf':
+            continue
         pdf = os.path.join(dir_path, pdf)
         statement = scraper.get_pdf_as_string(pdf)
         get_transactions(portfolio, statement)
     return portfolio
 
 DIR = '/Users/jarvis/Google Drive/Fund/Monthly Statements/ROTH/'
+DIR = '/Users/jarvis/Google Drive/Fund/Monthly Statements/MAIN/'
 
 def main(args):
     """Main parser"""
@@ -61,12 +67,17 @@ def main(args):
 
     elif args['directories']:
         for directory in args['DIR']:
-            for pdf in os.listdir(directory):
-                pdf = os.path.join(directory, pdf)
-                statement = scraper.get_pdf_as_string(pdf)
-                get_transactions(portfolio, statement)
+            portfolio = parse_directory(directory)
 
-    print portfolio._sort_activity()
+    elif args['csv']:
+        for filename in args['FILE']:
+            csv = open(filename)
+            portfolio.parse_from_csv(csv)
+
+    """
+    for record in portfolio._sort_activity():
+        print record
+        """
 
 if __name__ == "__main__":
     main(docopt.docopt(__doc__))

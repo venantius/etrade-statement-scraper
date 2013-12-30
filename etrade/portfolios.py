@@ -6,6 +6,11 @@ A Portfolio class
 """
 
 from collections import defaultdict
+from etrade.dividends import Dividend
+from etrade.trades import Trade
+from etrade.interest import Interest
+from etrade.contributions import Contribution
+
 
 class Portfolio(object):
     def __init__(self):
@@ -69,22 +74,40 @@ class Portfolio(object):
         """
         self.interest.extend(interest)
 
-def parse_record(record, position_dict):
-    if record.transaction_type == "Contrib":
-        position_dict['Cash'] += record.amount
-    elif record.transaction_type == "Dividend":
-        position_dict['Cash'] += record.amount
-    elif record.transaction_type == "Bought":
-        print record.__dict__
-    else:
-        print record.transaction_type, record.__dict__
+    def parse_from_csv(self, csv):
+        for csv_record in csv:
+            csv_record = csv_record.strip()
+            transaction_type = csv_record.split(',')[1]
+            if transaction_type == "Bought" or transaction_type == "Sold":
+                csv_record = Trade.from_string(csv_record)
+                self.trades.append(csv_record)
+            elif transaction_type == "Dividend":
+                csv_record = Dividend.from_string(csv_record)
+                self.dividends.append(csv_record)
+            elif transaction_type == "Contrib":
+                csv_record = Contribution.from_string(csv_record)
+                self.deposits.append(csv_record)
+            elif transaction_type == "Interest":
+                csv_record = Interest.from_string(csv_record)
+                self.interest.append(csv_record)
+            else:
+                raise Exception
 
-def build_portfolio(activities):
-    #activities = self._sort_activity()
-    current_date = activities[0].date
-    position_dict = defaultdict(dict)
-    position_dict['Cash'] = 0
-    for activity in activities:
-        parse_record(activity, position_dict)
+    def parse_record(record, position_dict):
+        if record.transaction_type == "Contrib":
+            portfolio += record.amount
+        elif record.transaction_type == "Dividend":
+            position_dict['Cash'] += record.amount
+        elif record.transaction_type == "Interest":
+            position_dict['Cash'] += record.amount
+        elif record.transaction_type == "Bought":
+            position_dict['Cash'] -= record.amount
+            position_dict[record.symbol] += record.quantity    
+        else:
+            print record.transaction_type, record.__dict__
 
-    print position_dict
+    def build_portfolio(self):
+        activities = self._sort_activity()
+        current_date = activities[0].date
+        for activity in activities:
+            self.parse_record(activity)

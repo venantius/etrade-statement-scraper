@@ -25,7 +25,7 @@ class Interest(Record):
         record = cls()
         record.date = cls.string_to_datetime(single_line_record[0:8])
         _, record.transaction_type, single_line_record = \
-                single_line_record.split(' ', 2)
+                single_line_record.strip().split(' ', 2)
         _, record.amount = \
                 single_line_record.rsplit(' ', 1)
         record.amount = float(record.amount)
@@ -36,7 +36,13 @@ class Interest(Record):
             self.amount]])
 
     @classmethod
-    def is_single_line(cls, transaction_record):
+    def from_string(cls, csv_record):
+        record = cls()
+        record.date, record.transaction_type, record.amount = csv_record.split(',')
+        return record
+
+    @staticmethod
+    def is_single_line(transaction_record):
         """
         Does this interest record exist entirely on one line?
         """
@@ -54,7 +60,17 @@ def get_records(text_block):
     text_block = text_block[start:end]
     interest = []
     text_block = text_block.split('\n')
-    for record in text_block:
+    for i, record in enumerate(text_block):
         if record.find('Interest') != -1:
-            interest.append(Interest.from_record(record))
+            if record.find('FROM') != -1: # Implies margin interest
+                record = record + ' ' + text_block[i+1]
+                try:
+                    record = Interest.from_record(record)
+                except ValueError:
+                    record = record + ' ' + text_block[i+2]
+                    record = Interest.from_record(record)
+                record.amount = -record.amount
+                interest.append(record)
+            else:
+                interest.append(Interest.from_record(record))
     return interest

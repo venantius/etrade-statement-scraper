@@ -29,11 +29,18 @@ class Dividend(Record):
                 single_line_record.split(' ', 2)
         _, record.symbol, record.amount = \
                 single_line_record.rsplit(' ', 2)
+        record.amount = float(record.amount)
         return record
 
     def __repr__(self):
         return ','.join([str(x) for x in [self.date, self.transaction_type,
             self.symbol, self.amount]])
+
+    @classmethod
+    def from_string(cls, csv_record):
+        record = cls()
+        record.date, record.transaction_type, record.symbol, record.amount = csv_record.split(',')
+        return record
 
     @classmethod
     def is_single_line(cls, transaction_record):
@@ -54,8 +61,26 @@ def get_records(text_block):
     text_block = text_block[start:end]
     trades = []
     text_block = text_block.split('\n')
+    """
+    for line in text_block:
+        print line
+    print '\n'
+    """
     for i, trade_record in enumerate(text_block):
         if trade_record.find('Dividend') != -1:
-            trade_record = ' '.join([trade_record, text_block[i-1]])
-            trades.append(Dividend.from_record(trade_record))
+            try:
+                if trade_record.find('PROCESSING FEE') != -1:
+                    trade_record = ' '.join([trade_record, text_block[i+1]])
+                    record = Dividend.from_record(trade_record)
+                    record.amount = -record.amount
+                    trades.append(record)
+                else:
+                    if text_block[i-1][0:4] == "DATE":
+                        trade_record = ' '.join([trade_record, text_block[i+1]])
+                        trades.append(Dividend.from_record(trade_record))
+                    else:
+                        trade_record = ' '.join([trade_record, text_block[i-1]])
+                        trades.append(Dividend.from_record(trade_record))
+            except Exception:
+                print trade_record
     return trades
