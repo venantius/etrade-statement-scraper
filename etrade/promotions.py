@@ -2,34 +2,20 @@
 # encoding: utf-8
 
 """
-Library for interest record-related functions
+Library for promotion record-related functions
 """
 
 from etrade.record import Record
 
-class Interest(Record):
+class Promotion(Record):
     """
-    Interest gained.
+    E*Trade promotions
     """
     def __init__(self):
-        super(Interest, self).__init__()
+        super(Promotion, self).__init__()
         self.date = None
         self.transaction_type = None
         self.amount = None
-
-    @classmethod
-    def from_record(cls, single_line_record):
-        """
-        Parse an interest record from a given PDF record
-        """
-        record = cls()
-        record.date = cls.string_to_datetime(single_line_record[0:8])
-        _, record.transaction_type, single_line_record = \
-                single_line_record.strip().split(' ', 2)
-        _, record.amount = \
-                single_line_record.rsplit(' ', 1)
-        record.amount = float(record.amount)
-        return record
 
     def __repr__(self):
         return ','.join([str(x) for x in [self.date, self.transaction_type,

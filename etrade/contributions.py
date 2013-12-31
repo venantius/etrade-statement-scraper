@@ -38,6 +38,8 @@ class Contribution(Record):
     def from_string(cls, csv_record):
         record = cls()
         record.date, record.transaction_type, record.amount = csv_record.split(',')
+        record.date = cls.string_to_datetime(record.date, '%Y-%m-%d')
+        record.amount = float(record.amount)
         return record
 
     @classmethod

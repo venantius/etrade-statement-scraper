@@ -26,11 +26,11 @@ class Record(object):
             return False
 
     @staticmethod
-    def string_to_datetime(date_string):
+    def string_to_datetime(date_string, format_string='%m/%d/%y'):
         """
         Parse a string formatted %m/%d/%y into a datetime object
         """
-        return datetime.strptime(date_string, '%m/%d/%y').date()
+        return datetime.strptime(date_string, format_string).date()
 
     def is_single_line(self, record):
         raise NotImplementedError

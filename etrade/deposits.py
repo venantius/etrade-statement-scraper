@@ -33,6 +33,14 @@ class Deposit(Record):
         return ','.join([str(x) for x in [self.date, self.transaction_type,
             self.amount]])
 
+    @classmethod
+    def from_string(cls, csv_record):
+        record = cls()
+        record.date, record.transaction_type, record.amount = csv_record.split(',')
+        record.date = cls.string_to_datetime(record.date, '%Y-%m-%d')
+        record.amount = float(record.amount)
+        return record
+
     @staticmethod
     def clean(record):
         x = record.find('DEPOSIT')

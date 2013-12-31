@@ -5,18 +5,25 @@
 A Portfolio class
 """
 
-from collections import defaultdict
-from etrade.dividends import Dividend
-from etrade.trades import Trade
-from etrade.interest import Interest
-from etrade.contributions import Contribution
+import copy
 
+from collections import defaultdict
+from datetime import timedelta
+    
+from etrade.contributions import Contribution
+from etrade.deposits import Deposit
+from etrade.dividends import Dividend
+from etrade.interest import Interest
+from etrade.promotions import Promotion
+from etrade.principal import Principal
+from etrade.record import Record
+from etrade.trades import Trade
+from etrade.withdrawals import Withdrawal
 
 class Portfolio(object):
     def __init__(self):
         # The things that make a portfolio
-        self.positions = dict() # {date: [{asset}...]}
-        self.cash = int()
+        self.portfolio = {}
 
         # The history one needs
         self.trades = []
@@ -24,6 +31,9 @@ class Portfolio(object):
         self.withdrawals = []
         self.dividends = []
         self.interest = []
+        self.principal = []
+        self.promotions = []
+        self.splits = []
 
     def __repr__(self):
         print "Assets:"
@@ -41,6 +51,9 @@ class Portfolio(object):
         activity.extend(self.withdrawals)
         activity.extend(self.dividends)
         activity.extend(self.interest)
+        activity.extend(self.principal)
+        activity.extend(self.promotions)
+        activity.extend(self.splits)
         activity.sort(key=lambda x: x.date)
         return activity
 
@@ -90,24 +103,106 @@ class Portfolio(object):
             elif transaction_type == "Interest":
                 csv_record = Interest.from_string(csv_record)
                 self.interest.append(csv_record)
+            elif transaction_type == "Deposit":
+                csv_record = Deposit.from_string(csv_record)
+                self.deposits.append(csv_record)
+            elif transaction_type == "Withdrawal":
+                csv_record = Withdrawal.from_string(csv_record)
+                self.withdrawals.append(csv_record)
+            elif transaction_type == "Principal":
+                csv_record = Principal.from_string(csv_record)
+                self.principal.append(csv_record)
+            elif transaction_type == "Promotion":
+                csv_record = Promotion.from_string(csv_record)
+                self.promotions.append(csv_record)
+            elif transaction_type == "Split":
+                record = Record()
+                record.transaction_type = "Split"
+                csv_record = csv_record.split(',')
+                record.date = Record.string_to_datetime(csv_record[0], '%Y-%m-%d')
+                #record.date = csv_record[0]
+                record.symbol = csv_record[2]
+                record.split_from = int(csv_record[3])
+                record.split_to = int(csv_record[4])
+                self.splits.append(record)
             else:
+                print csv_record
                 raise Exception
 
-    def parse_record(record, position_dict):
-        if record.transaction_type == "Contrib":
-            portfolio += record.amount
+    def parse_record(self, record, debug=True):
+        """
+        Updates the portfolio dictionary with a new record
+        """
+        if record.transaction_type == "Contrib" or \
+                record.transaction_type == "Deposit":
+            self.portfolio[record.date]['Cash'] += record.amount
+        elif record.transaction_type == "Withdrawal":
+            self.portfolio[record.date]['Cash'] -= record.amount
         elif record.transaction_type == "Dividend":
-            position_dict['Cash'] += record.amount
+            self.portfolio[record.date]['Cash'] += record.amount
+        elif record.transaction_type == "Principal":
+            self.portfolio[record.date]['Cash'] += record.amount
         elif record.transaction_type == "Interest":
-            position_dict['Cash'] += record.amount
+            self.portfolio[record.date]['Cash'] += record.amount
         elif record.transaction_type == "Bought":
-            position_dict['Cash'] -= record.amount
-            position_dict[record.symbol] += record.quantity    
+            if record.is_option():
+                self.portfolio[record.date]['Cash'] -= 100 * record.quantity * record.price + record.commission
+                if debug:
+                    print "BOUGHT", record.date, record.symbol, 100 * record.quantity * record.price + record.commission
+            else:
+                self.portfolio[record.date]['Cash'] -= record.quantity * record.price + record.commission
+                if debug:
+                    print "BOUGHT", record.date, record.symbol, record.quantity * record.price + record.commission
+            self.portfolio[record.date][record.symbol] += record.quantity   
+        elif record.transaction_type == "Sold":
+            if record.is_option():
+                if debug:
+                    print "SOLD", record.date, record.symbol, 100 * record.quantity * record.price + record.commission
+                self.portfolio[record.date]['Cash'] -= 100 * record.quantity * record.price + record.commission
+            else:
+                self.portfolio[record.date]['Cash'] -= record.quantity * record.price + record.commission
+                if debug:
+                    print "SOLD", record.date, record.symbol, record.quantity * record.price + record.commission
+            self.portfolio[record.date][record.symbol] += record.quantity
+            if self.portfolio[record.date][record.symbol] == 0:
+                del(self.portfolio[record.date][record.symbol])
+        elif record.transaction_type == "Promotion":
+            self.portfolio[record.date]['Cash'] += record.amount
+        elif record.transaction_type == "Split":
+            self.portfolio[record.date][record.symbol] = \
+                self.portfolio[record.date][record.symbol] / (record.split_from / record.split_to)
         else:
             print record.transaction_type, record.__dict__
+            raise Exception
 
     def build_portfolio(self):
+        """
+        Builds the portfolio dictionary into a date: assets mapping.
+        
+        Assets are a defaultdict(float)
+        """
         activities = self._sort_activity()
         current_date = activities[0].date
+        self.portfolio[current_date] = defaultdict(float)
+        self.portfolio[current_date]['Cash'] = 0.0
         for activity in activities:
+            day_portfolio = defaultdict(float)
+            while current_date != activity.date:
+                current_date += timedelta(1)
+                self.portfolio[current_date] = copy.copy(self.portfolio[current_date - timedelta(1)])
             self.parse_record(activity)
+
+    def get_end_of_month_assets(self, final_date):
+        """
+        Gets the end of month asset map for each month
+        """
+        dates = sorted(self.portfolio.keys())
+        final_date = Trade.string_to_datetime(final_date, '%Y-%m-%d')
+        prior_date = dates[0]
+        for date in dates:
+            if date == final_date:
+                print date, self.portfolio[date]
+                break
+            if date.month != prior_date.month:
+                print prior_date, self.portfolio[prior_date]
+            prior_date = date

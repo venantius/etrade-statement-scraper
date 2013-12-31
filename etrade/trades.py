@@ -21,6 +21,15 @@ class Trade(Record):
         self.price = None
         self.commission = None
 
+    def is_option(self):
+        """
+        Look at the symbol to see if this is an option
+        """
+        if self.symbol[0:4] == "CALL" or self.symbol[0:3] == "PUT":
+            return True
+        else:
+            return False
+
     @classmethod
     def from_record(cls, single_line_record):
         """
@@ -88,10 +97,14 @@ class Trade(Record):
         trade = cls()
         trade.date, trade.transaction_type, trade.symbol, trade.quantity, \
                 trade.price, trade.commission = csv_record.split(',')
+        trade.date = cls.string_to_datetime(trade.date, '%Y-%m-%d')
+        trade.quantity = float(trade.quantity)
+        trade.price = float(trade.price)
+        trade.commission = float(trade.commission)
         return trade
 
     @staticmethod
-    def is_option(transaction_record):
+    def record_is_option(transaction_record):
         """
         Is this trade record an options contract
         """
@@ -127,7 +140,7 @@ def get_records(text_block):
     trades = []
     for i, trade_record in enumerate(text_block):
         try:
-            if Trade.is_option(trade_record):
+            if Trade.record_is_option(trade_record):
 
                     if not Trade.starts_with_date(trade_record):
                         j = i

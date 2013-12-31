@@ -2,17 +2,17 @@
 # encoding: utf-8
 
 """
-Library for dividend record-related functions
+Library for principal record-related functions
 """
 
 from etrade.record import Record
 
-class Dividend(Record):
+class Principal(Record):
     """
-    A dividend
+    A principal
     """
     def __init__(self):
-        super(Dividend, self).__init__()
+        super(Principal, self).__init__()
         self.date = None
         self.symbol = None
         self.transaction_type = None

@@ -73,7 +73,20 @@ def main(args):
         for filename in args['FILE']:
             csv = open(filename)
             portfolio.parse_from_csv(csv)
+        portfolio.build_portfolio()
+        portfolio.get_end_of_month_assets('2012-06-30')
 
+
+    """
+    TRACKING: 
+    ROTH DONE [lacking 2013-12]
+    MAIN up to 2012-04-30
+
+
+
+    NOTES:
+    2008-12-29 WH purchase had a commission of 12.99 that was reimbursed as part of some promo; the reimbursement came on 2009-01-26
+    """
     """
     for record in portfolio._sort_activity():
         print record
