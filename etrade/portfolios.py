@@ -57,6 +57,35 @@ class Portfolio(object):
         activity.sort(key=lambda x: x.date)
         return activity
 
+    def get_commissions(self):
+        """
+        Return a list of commissions
+        """
+        trades = self.trades
+        trades.sort(key=lambda x: x.date)
+        commissions = defaultdict(float)
+        for trade in trades:
+            commissions[trade.date.year] += trade.commission
+            print trade.date.year, trade.commission
+        print commissions
+    
+    def get_deltas(self):
+        """
+        Return a list of deposits and withdrawals
+        """
+        deposits = self.deposits
+        deposits.extend(self.withdrawals)
+        deposits.sort(key=lambda x: x.date)
+        for delta in deposits:
+            if delta.transaction_type == "Withdrawal":
+                print str(delta.date) + ',-' + str(delta.amount)
+            elif delta.transaction_type == "Contrib" or \
+                    delta.transaction_type == "Deposit":
+                print str(delta.date) + ',' + str(delta.amount)
+            else:
+                print delta
+                raise Exception
+
     def add_trades(self, trades):
         """
         Add a list of trades to this portfolio
@@ -129,7 +158,7 @@ class Portfolio(object):
                 print csv_record
                 raise Exception
 
-    def parse_record(self, record, debug=True):
+    def parse_record(self, record, debug=False):
         """
         Updates the portfolio dictionary with a new record
         """
@@ -191,6 +220,9 @@ class Portfolio(object):
                 current_date += timedelta(1)
                 self.portfolio[current_date] = copy.copy(self.portfolio[current_date - timedelta(1)])
             self.parse_record(activity)
+        while current_date.month == activity.date.month:
+            current_date += timedelta(1)
+            self.portfolio[current_date] = copy.copy(self.portfolio[current_date - timedelta(1)])
 
     def get_end_of_month_assets(self, final_date):
         """
@@ -206,3 +238,4 @@ class Portfolio(object):
             if date.month != prior_date.month:
                 print prior_date, self.portfolio[prior_date]
             prior_date = date
+        

@@ -74,13 +74,36 @@ def main(args):
             csv = open(filename)
             portfolio.parse_from_csv(csv)
         portfolio.build_portfolio()
-        portfolio.get_end_of_month_assets('2012-06-30')
+        #portfolio.get_end_of_month_assets('2013-11-30')
+        #portfolio.get_deltas()
+        portfolio.get_commissions()
 
 
     """
     TRACKING: 
     ROTH DONE [lacking 2013-12]
-    MAIN up to 2012-04-30
+    MAIN up to 2013-11-31
+
+    Records of portfolio value:
+    ROTH:
+    2010-12-31: 3,920.45
+    2011-12-31: 3,616.26
+    2012-12-31: 6,922.26
+    2013-11-31: 13,551.97
+
+    MAIN:
+    2009-12-31: 5,999.88
+    2010-12-31: 12,115.33
+    2011-12-31: 5,227.93
+    2012-12-31: 12,560.06
+    2013-11-31: 37,841.98
+
+    COMBINED:
+    2009-12-31: 5,999.88 [-207.9]
+    2010-12-31: 16,035.78 [-339.38]
+    2011-12-31: 8,844.19 [-611.5864]
+    2012-12-31: 19,482.32 [-283.575]
+    2013-11-31: 51,393.95 [-254.129]
 
 
 
