@@ -66,7 +66,7 @@ class Portfolio(object):
         commissions = defaultdict(float)
         for trade in trades:
             commissions[trade.date.year] += trade.commission
-            print trade.date.year, trade.commission
+            print trade.date, trade.commission
         print commissions
     
     def get_deltas(self):
